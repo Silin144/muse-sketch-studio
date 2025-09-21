@@ -233,7 +233,7 @@ export default function FashionDesignTool() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/home")}
             className="text-text-secondary hover:text-text-primary"
           >
             <Home className="h-4 w-4 mr-2" />
