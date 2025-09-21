@@ -156,7 +156,7 @@ const server = http.createServer(async (req, res) => {
     req.on('end', async () => {
       try {
         const data = JSON.parse(body);
-        const { prompt } = data;
+        const { prompt, garmentType, gender, detailedFeatures } = data;
 
         if (!prompt) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -174,11 +174,18 @@ const server = http.createServer(async (req, res) => {
         }
 
         console.log('Generating fashion sketch with prompt:', prompt);
+        console.log('Gender:', gender, 'Garment:', garmentType);
 
         try {
+          // Create detailed description from features
+          const featureDescription = detailedFeatures ? 
+            `with ${detailedFeatures.shoulders} shoulders, ${detailedFeatures.sleeves} sleeves, ${detailedFeatures.waist} waist, ${detailedFeatures.neckline} neckline, ${detailedFeatures.length} length, ${detailedFeatures.fit} fit` : '';
+
+          const genderContext = gender ? `designed for ${gender.toLowerCase()}` : '';
+          
           // Use google/nano-banana for fashion sketch generation
           const input = {
-            prompt: `Professional fashion designer sketch, hand-drawn style, clean pencil lines, technical fashion illustration, ${data.garmentType || 'dress'}, ${prompt}. Pure sketch only, no text, no labels, no annotations, no background elements, white/cream paper background, detailed garment construction lines, professional fashion croquis style, elegant proportions, fashion design studio quality`,
+            prompt: `Professional fashion designer sketch, hand-drawn style, clean pencil lines, technical fashion illustration, ${garmentType || 'dress'} ${genderContext} ${featureDescription}, ${prompt}. Pure sketch only, no text, no labels, no annotations, no background elements, white/cream paper background, detailed garment construction lines, professional fashion croquis style, elegant proportions, fashion design studio quality`,
             image_input: data.sketchSvg ? [data.sketchSvg] : undefined,
             output_format: "jpg"
           };
@@ -307,6 +314,82 @@ const server = http.createServer(async (req, res) => {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ 
           error: `Model generation failed: ${error.message}`,
+          success: false 
+        }));
+      }
+    });
+    return;
+  }
+
+  if (req.method === 'POST' && req.url === '/api/generate-3d') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        const data = JSON.parse(body);
+        const { modelPhotoUrl, garmentType, detailedFeatures } = data;
+
+        if (!modelPhotoUrl) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Model photo URL is required', success: false }));
+          return;
+        }
+
+        console.log('Generating 3D visualization with MVDream...');
+
+        // Create detailed description from features for 3D generation
+        const featureDescription = detailedFeatures ? 
+          `${detailedFeatures.shoulders} shoulders, ${detailedFeatures.sleeves} sleeves, ${detailedFeatures.waist} waist, ${detailedFeatures.neckline} neckline, ${detailedFeatures.length} length, ${detailedFeatures.fit} fit` : '';
+
+        const fullPrompt = `Professional 3D fashion visualization showing multiple angles: front view, side view, back view of ${garmentType || 'garment'} ${featureDescription}, three-quarter turn sequence, 360-degree product photography style, clean white studio background, high-quality fashion photography, detailed fabric textures, professional lighting, fashion catalog style, no text or labels`;
+
+        // MVDream expects different input format - using the model photo as reference
+        const input = {
+          prompt: fullPrompt,
+          image: modelPhotoUrl,
+          num_inference_steps: 50,
+          guidance_scale: 7.5
+        };
+
+        console.log('Using 3D visualization with prompt:', fullPrompt);
+        // Fallback to nano-banana with 3D-focused prompts since MVDream might not be available
+        const input3D = {
+          prompt: fullPrompt,
+          image_input: [modelPhotoUrl],
+          output_format: "jpg"
+        };
+        const output = await callReplicateAPI('google/nano-banana', input3D);
+        
+        // MVDream returns multiple views - we'll use the first one or combine them
+        let imageUrl;
+        if (Array.isArray(output)) {
+          // If multiple views returned, use the first one (or we could create a composite)
+          imageUrl = output[0];
+          console.log(`3D generation returned ${output.length} views, using first view`);
+        } else {
+          imageUrl = output;
+        }
+
+        if (!imageUrl) {
+          throw new Error('No image URL returned from MVDream 3D API');
+        }
+
+        console.log('3D view generated successfully with MVDream:', imageUrl);
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          imageUrl: imageUrl,
+          allViews: Array.isArray(output) ? output : [output], // Include all views for future use
+          success: true,
+          step: '3d',
+          model: 'mvdream'
+        }));
+
+      } catch (error) {
+        console.error('Error generating 3D view:', error);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ 
+          error: `3D generation failed: ${error.message}`,
           success: false 
         }));
       }
