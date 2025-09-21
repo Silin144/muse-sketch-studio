@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Kalam:wght@300;400;700&family=Kaushan+Script&family=Allura&family=Great+Vibes&family=Dancing+Script:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -137,4 +139,6 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground;
   }
+
+
 }

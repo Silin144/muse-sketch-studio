@@ -12,7 +12,7 @@ try {
   envContent.split('\n').forEach(line => {
     if (line.trim() && !line.startsWith('#')) {
       const [key, ...values] = line.split('=');
-      envVars[key] = values.join('=').replace(/"/g, '');
+      envVars[key] = values.join('=').replace(/"/g, '').replace(/\r/g, '').trim();
     }
   });
 } catch (error) {
