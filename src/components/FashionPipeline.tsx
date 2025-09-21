@@ -4,17 +4,27 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { PanelLeftClose, PanelLeftOpen, Sparkles, Palette, User, Video, Check } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen, Sparkles, Palette, User, Video, Check, Box } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type DesignStep = 'prompt' | 'sketch' | 'colors' | 'model' | 'runway';
+type DesignStep = 'prompt' | 'sketch' | 'colors' | 'model' | '3d' | 'runway';
 
 interface DesignState {
   prompt: string;
   garmentType: string;
+  gender: string;
+  detailedFeatures: {
+    shoulders: string;
+    sleeves: string;
+    waist: string;
+    neckline: string;
+    length: string;
+    fit: string;
+  };
   sketchUrl: string | null;
   coloredUrl: string | null;
   modelUrl: string | null;
+  threeDUrl: string | null;
   runwayUrl: string | null;
   selectedColors: string[];
   currentStep: DesignStep;
@@ -28,6 +38,7 @@ interface FashionPipelineProps {
   onGenerateSketch: () => void;
   onAddColors: () => void;
   onGenerateModel: () => void;
+  onGenerate3D: () => void;
   onGenerateRunway: () => void;
   isGenerating: boolean;
   className?: string;
@@ -38,9 +49,34 @@ const garmentTypes = [
   "blazer", "jumpsuit", "shorts", "sweater", "cardigan", "vest", "kimono"
 ];
 
+const genderOptions = ["Men", "Women", "Unisex"];
+
+const detailedFeatureOptions = {
+  shoulders: ["Regular", "Padded", "Dropped", "Structured", "Soft", "Wide"],
+  sleeves: ["Short", "Long", "3/4", "Sleeveless", "Bell", "Puffed", "Fitted"],
+  waist: ["Regular", "High-waisted", "Low-waisted", "Cinched", "Loose", "Fitted"],
+  neckline: ["Round", "V-neck", "Scoop", "High neck", "Off-shoulder", "Boat neck"],
+  length: ["Mini", "Knee-length", "Midi", "Maxi", "Floor-length", "Cropped"],
+  fit: ["Slim", "Regular", "Loose", "Oversized", "Tailored", "Relaxed"]
+};
+
 const colorOptions = [
-  "red", "blue", "green", "yellow", "purple", "pink", "orange", "black",
-  "white", "gray", "brown", "navy", "emerald", "gold", "silver", "coral"
+  { name: "Crimson Red", value: "#DC143C", hex: "#DC143C" },
+  { name: "Royal Blue", value: "#4169E1", hex: "#4169E1" },
+  { name: "Emerald", value: "#50C878", hex: "#50C878" },
+  { name: "Golden Yellow", value: "#FFD700", hex: "#FFD700" },
+  { name: "Deep Purple", value: "#663399", hex: "#663399" },
+  { name: "Rose Pink", value: "#FF69B4", hex: "#FF69B4" },
+  { name: "Sunset Orange", value: "#FF8C00", hex: "#FF8C00" },
+  { name: "Midnight Black", value: "#000000", hex: "#000000" },
+  { name: "Pearl White", value: "#F8F8FF", hex: "#F8F8FF" },
+  { name: "Charcoal Gray", value: "#36454F", hex: "#36454F" },
+  { name: "Chocolate Brown", value: "#7B3F00", hex: "#7B3F00" },
+  { name: "Navy Blue", value: "#000080", hex: "#000080" },
+  { name: "Mint Green", value: "#98FB98", hex: "#98FB98" },
+  { name: "Rose Gold", value: "#E8B4B8", hex: "#E8B4B8" },
+  { name: "Platinum Silver", value: "#E5E4E2", hex: "#E5E4E2" },
+  { name: "Coral Reef", value: "#FF7F50", hex: "#FF7F50" }
 ];
 
 const presetPrompts = [
@@ -59,6 +95,7 @@ const steps = [
   { id: 'sketch', label: 'Fashion Sketch', icon: Sparkles, description: 'AI-generated sketch' },
   { id: 'colors', label: 'Add Colors', icon: Palette, description: 'Choose color palette' },
   { id: 'model', label: 'Model Photo', icon: User, description: 'See it on a model' },
+  { id: '3d', label: '3D View', icon: Box, description: '3D model visualization' },
   { id: 'runway', label: 'Runway Video', icon: Video, description: 'Fashion show ready' }
 ];
 
@@ -70,6 +107,7 @@ export function FashionPipeline({
   onGenerateSketch,
   onAddColors,
   onGenerateModel,
+  onGenerate3D,
   onGenerateRunway,
   isGenerating,
   className 
@@ -79,10 +117,10 @@ export function FashionPipeline({
     onDesignStateChange({ ...designState, ...updates });
   };
 
-  const toggleColor = (color: string) => {
-    const newColors = designState.selectedColors.includes(color)
-      ? designState.selectedColors.filter(c => c !== color)
-      : [...designState.selectedColors, color];
+  const toggleColor = (colorName: string) => {
+    const newColors = designState.selectedColors.includes(colorName)
+      ? designState.selectedColors.filter(c => c !== colorName)
+      : [...designState.selectedColors, colorName];
     updateDesignState({ selectedColors: newColors });
   };
 
@@ -101,6 +139,7 @@ export function FashionPipeline({
       case 'sketch': return !!designState.sketchUrl;
       case 'colors': return !!designState.coloredUrl;
       case 'model': return !!designState.modelUrl;
+      case '3d': return !!designState.threeDUrl;
       case 'runway': return !!designState.runwayUrl;
       default: return false;
     }
@@ -189,22 +228,76 @@ export function FashionPipeline({
             <div className="space-y-4">
               <h3 className="text-sm font-medium text-text-primary">Step 1: Design Prompt</h3>
               
-              <div>
-                <label className="text-sm font-medium text-text-primary mb-2 block">
-                  Garment Type
-                </label>
-                <Select value={designState.garmentType} onValueChange={(value) => updateDesignState({ garmentType: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {garmentTypes.map(type => (
-                      <SelectItem key={type} value={type}>
-                        {type.charAt(0).toUpperCase() + type.slice(1)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-medium text-text-primary mb-2 block">
+                    Garment Type
+                  </label>
+                  <Select value={designState.garmentType} onValueChange={(value) => updateDesignState({ garmentType: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {garmentTypes.map(type => (
+                        <SelectItem key={type} value={type}>
+                          {type.charAt(0).toUpperCase() + type.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-text-primary mb-2 block">
+                    Gender
+                  </label>
+                  <Select value={designState.gender} onValueChange={(value) => updateDesignState({ gender: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {genderOptions.map(gender => (
+                        <SelectItem key={gender} value={gender}>
+                          {gender}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Detailed Fashion Features */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-text-primary">Detailed Fashion Features</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {Object.entries(detailedFeatureOptions).map(([feature, options]) => (
+                    <div key={feature}>
+                      <label className="text-xs font-medium text-text-secondary mb-1 block capitalize">
+                        {feature}
+                      </label>
+                      <Select 
+                        value={designState.detailedFeatures[feature as keyof typeof designState.detailedFeatures]} 
+                        onValueChange={(value) => updateDesignState({ 
+                          detailedFeatures: { 
+                            ...designState.detailedFeatures, 
+                            [feature]: value 
+                          } 
+                        })}
+                      >
+                        <SelectTrigger className="h-8">
+                          <SelectValue placeholder={`Select ${feature}`} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {options.map(option => (
+                            <SelectItem key={option} value={option}>
+                              {option}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div>
@@ -254,37 +347,58 @@ export function FashionPipeline({
                 <label className="text-sm font-medium text-text-primary">
                   Select colors for your design
                 </label>
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 gap-3">
                   {colorOptions.map(color => (
                     <button
-                      key={color}
-                      onClick={() => toggleColor(color)}
+                      key={color.name}
+                      onClick={() => toggleColor(color.name)}
                       className={cn(
-                        "w-full h-8 rounded border-2 transition-all",
-                        designState.selectedColors.includes(color) 
-                          ? "border-gray-800 scale-95" 
-                          : "border-gray-300 hover:border-gray-500"
+                        "flex items-center gap-3 p-3 rounded-lg border-2 transition-all hover:shadow-md",
+                        designState.selectedColors.includes(color.name) 
+                          ? "border-blue-500 bg-blue-50 scale-95" 
+                          : "border-gray-200 hover:border-gray-300"
                       )}
-                      style={{ backgroundColor: color === 'white' ? '#f8f9fa' : color }}
-                      title={color}
-                    />
+                      title={color.name}
+                    >
+                      <div 
+                        className="w-6 h-6 rounded-full border border-gray-300"
+                        style={{ backgroundColor: color.hex }}
+                      />
+                      <div className="flex-1 text-left">
+                        <div className="text-sm font-medium text-text-primary">{color.name}</div>
+                        <div className="text-xs text-text-muted">{color.hex}</div>
+                      </div>
+                      {designState.selectedColors.includes(color.name) && (
+                        <Check className="h-4 w-4 text-blue-600" />
+                      )}
+                    </button>
                   ))}
                 </div>
                 
                 {designState.selectedColors.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {designState.selectedColors.map(color => (
-                      <Badge key={color} variant="secondary" className="text-xs">
-                        {color}
-                      </Badge>
-                    ))}
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium text-text-primary">Selected Colors:</div>
+                    <div className="flex flex-wrap gap-2">
+                      {designState.selectedColors.map(colorName => {
+                        const colorObj = colorOptions.find(c => c.name === colorName);
+                        return (
+                          <div key={colorName} className="flex items-center gap-2 bg-gray-100 rounded-full px-3 py-1">
+                            <div 
+                              className="w-3 h-3 rounded-full border border-gray-300"
+                              style={{ backgroundColor: colorObj?.hex }}
+                            />
+                            <span className="text-xs text-text-secondary">{colorName}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
 
               <Button 
                 onClick={onAddColors}
-                disabled={isGenerating}
+                disabled={isGenerating || designState.selectedColors.length === 0}
                 className="w-full"
               >
                 <Palette className="h-4 w-4 mr-2" />
@@ -312,10 +426,29 @@ export function FashionPipeline({
             </div>
           )}
 
-          {/* Step 4: Runway Video */}
+          {/* Step 4: 3D View */}
+          {designState.currentStep === '3d' && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-text-primary">Step 4: Generate 3D View</h3>
+              <p className="text-sm text-text-secondary">
+                Create a 3D visualization of your design for better perspective and detail viewing.
+              </p>
+
+              <Button 
+                onClick={onGenerate3D}
+                disabled={isGenerating}
+                className="w-full"
+              >
+                <Box className="h-4 w-4 mr-2" />
+                Generate 3D View
+              </Button>
+            </div>
+          )}
+
+          {/* Step 5: Runway Video */}
           {designState.currentStep === 'runway' && (
             <div className="space-y-4">
-              <h3 className="text-sm font-medium text-text-primary">Step 4: Create Runway Video</h3>
+              <h3 className="text-sm font-medium text-text-primary">Step 5: Create Runway Video</h3>
               <p className="text-sm text-text-secondary">
                 Generate a runway walk video with your model wearing the design.
               </p>

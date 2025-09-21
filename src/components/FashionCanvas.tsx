@@ -1,15 +1,27 @@
 import { cn } from "@/lib/utils";
-import { Sparkles, Loader2, Download, Play } from "lucide-react";
+import { Sparkles, Loader2, Download, Play, Edit, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { useState } from "react";
 
-type DesignStep = 'prompt' | 'sketch' | 'colors' | 'model' | 'runway';
+type DesignStep = 'prompt' | 'sketch' | 'colors' | 'model' | '3d' | 'runway';
 
 interface DesignState {
   prompt: string;
   garmentType: string;
+  gender: string;
+  detailedFeatures: {
+    shoulders: string;
+    sleeves: string;
+    waist: string;
+    neckline: string;
+    length: string;
+    fit: string;
+  };
   sketchUrl: string | null;
   coloredUrl: string | null;
   modelUrl: string | null;
+  threeDUrl: string | null;
   runwayUrl: string | null;
   selectedColors: string[];
   currentStep: DesignStep;
@@ -20,9 +32,12 @@ interface FashionCanvasProps {
   isGenerating?: boolean;
   currentOperation?: string;
   className?: string;
+  onRegenerateSketch?: (newPrompt: string) => void;
 }
 
-export function FashionCanvas({ designState, isGenerating, currentOperation, className }: FashionCanvasProps) {
+export function FashionCanvas({ designState, isGenerating, currentOperation, className, onRegenerateSketch }: FashionCanvasProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editPrompt, setEditPrompt] = useState(designState.prompt);
   
   const downloadImage = (url: string, filename: string) => {
     const link = document.createElement('a');
@@ -31,6 +46,13 @@ export function FashionCanvas({ designState, isGenerating, currentOperation, cla
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleRegenerateSketch = () => {
+    if (onRegenerateSketch && editPrompt.trim()) {
+      onRegenerateSketch(editPrompt);
+      setIsEditing(false);
+    }
   };
 
   const renderContent = () => {
@@ -90,6 +112,41 @@ export function FashionCanvas({ designState, isGenerating, currentOperation, cla
       );
     }
 
+    // Show 3D view if available
+    if (designState.threeDUrl) {
+      return (
+        <div className="h-full flex flex-col">
+          <div className="flex-1 flex items-center justify-center p-4">
+            <img 
+              src={designState.threeDUrl} 
+              alt="3D visualization of the design" 
+              className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
+            />
+          </div>
+          <div className="p-4 border-t border-border-subtle bg-surface-secondary">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-dancing text-lg font-semibold text-text-primary">
+                  3D View Ready! 📐
+                </h3>
+                <p className="text-sm text-text-secondary">
+                  Click "Create Runway Video" to continue
+                </p>
+              </div>
+              <Button
+                onClick={() => downloadImage(designState.threeDUrl!, '3d-view.png')}
+                size="sm"
+                variant="outline"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download
+              </Button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     // Show model photo if available
     if (designState.modelUrl) {
       return (
@@ -108,7 +165,7 @@ export function FashionCanvas({ designState, isGenerating, currentOperation, cla
                   Model Photo Ready!
                 </h3>
                 <p className="text-sm text-text-secondary">
-                  Click "Create Runway Video" to continue
+                  Click "Generate 3D View" to continue
                 </p>
               </div>
               <Button
@@ -164,12 +221,55 @@ export function FashionCanvas({ designState, isGenerating, currentOperation, cla
     if (designState.sketchUrl) {
       return (
         <div className="h-full flex flex-col">
-          <div className="flex-1 flex items-center justify-center p-4">
+          <div className="flex-1 flex items-center justify-center p-4 relative">
             <img 
               src={designState.sketchUrl} 
               alt="Fashion sketch" 
               className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
             />
+            
+            {/* Edit Sketch Panel */}
+            {isEditing && (
+              <div className="absolute top-4 right-4 w-80 bg-white rounded-lg shadow-xl border p-4 z-10">
+                <h4 className="font-medium text-text-primary mb-3">Edit Sketch</h4>
+                <Textarea
+                  value={editPrompt}
+                  onChange={(e) => setEditPrompt(e.target.value)}
+                  placeholder="Modify your design description..."
+                  className="min-h-[100px] mb-3"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleRegenerateSketch}
+                    size="sm"
+                    disabled={!editPrompt.trim()}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Regenerate
+                  </Button>
+                  <Button
+                    onClick={() => setIsEditing(false)}
+                    size="sm"
+                    variant="outline"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+            
+            {/* Edit Button */}
+            {!isEditing && onRegenerateSketch && (
+              <Button
+                onClick={() => setIsEditing(true)}
+                size="sm"
+                variant="outline"
+                className="absolute top-4 right-4"
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Sketch
+              </Button>
+            )}
           </div>
           <div className="p-4 border-t border-border-subtle bg-surface-secondary">
             <div className="flex items-center justify-between">
