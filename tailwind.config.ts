@@ -15,6 +15,10 @@ export default {
     extend: {
       fontFamily: {
         'dancing': ['Dancing Script', 'cursive'],
+        'kalam': ['Kalam', 'cursive'],
+        'kaushan': ['Kaushan Script', 'cursive'],
+        'allura': ['Allura', 'cursive'],
+        'great-vibes': ['Great Vibes', 'cursive'],
         'roboto': ['Roboto', 'sans-serif'],
       },
       colors: {
