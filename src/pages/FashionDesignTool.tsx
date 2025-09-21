@@ -7,14 +7,24 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Home } from "lucide-react";
 
-type DesignStep = 'prompt' | 'sketch' | 'colors' | 'model' | 'runway';
+type DesignStep = 'prompt' | 'sketch' | 'colors' | 'model' | '3d' | 'runway';
 
 interface DesignState {
   prompt: string;
   garmentType: string;
+  gender: string;
+  detailedFeatures: {
+    shoulders: string;
+    sleeves: string;
+    waist: string;
+    neckline: string;
+    length: string;
+    fit: string;
+  };
   sketchUrl: string | null;
   coloredUrl: string | null;
   modelUrl: string | null;
+  threeDUrl: string | null;
   runwayUrl: string | null;
   selectedColors: string[];
   currentStep: DesignStep;
@@ -25,9 +35,19 @@ export default function FashionDesignTool() {
   const [designState, setDesignState] = useState<DesignState>({
     prompt: "",
     garmentType: "dress",
+    gender: "Women",
+    detailedFeatures: {
+      shoulders: "Regular",
+      sleeves: "Long",
+      waist: "Regular",
+      neckline: "Round",
+      length: "Knee-length",
+      fit: "Regular"
+    },
     sketchUrl: null,
     coloredUrl: null,
     modelUrl: null,
+    threeDUrl: null,
     runwayUrl: null,
     selectedColors: [],
     currentStep: 'prompt'
@@ -41,9 +61,15 @@ export default function FashionDesignTool() {
   // Auto-collapse sidebar on mobile
   const shouldCollapseSidebar = isMobile || isSidebarCollapsed;
 
-  // Step 1: Generate Sketch
-  const handleGenerateSketch = async () => {
-    if (!designState.prompt.trim()) {
+  // Regenerate sketch with new prompt
+  const handleRegenerateSketch = async (newPrompt: string) => {
+    setDesignState(prev => ({ ...prev, prompt: newPrompt }));
+    await generateSketch(newPrompt);
+  };
+
+  // Generate sketch function (extracted for reuse)
+  const generateSketch = async (prompt: string) => {
+    if (!prompt.trim()) {
       toast({
         title: "No prompt provided",
         description: "Please enter a design description first.",
@@ -60,8 +86,10 @@ export default function FashionDesignTool() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          prompt: designState.prompt,
-          garmentType: designState.garmentType 
+          prompt: prompt,
+          garmentType: designState.garmentType,
+          gender: designState.gender,
+          detailedFeatures: designState.detailedFeatures
         })
       });
 
@@ -83,6 +111,11 @@ export default function FashionDesignTool() {
       setIsGenerating(false);
       setCurrentOperation("");
     }
+  };
+
+  // Step 1: Generate Sketch (wrapper)
+  const handleGenerateSketch = async () => {
+    await generateSketch(designState.prompt);
   };
 
   // Step 2: Add Colors
@@ -147,9 +180,9 @@ export default function FashionDesignTool() {
         setDesignState(prev => ({
           ...prev,
           modelUrl: data.imageUrl,
-          currentStep: 'runway'
+          currentStep: '3d'
         }));
-        toast({ title: "Model photo created!", description: "Ready for runway video." });
+        toast({ title: "Model photo created!", description: "Ready for 3D visualization." });
       } else {
         throw new Error(data.error || 'Failed to generate model photo');
       }
@@ -161,7 +194,45 @@ export default function FashionDesignTool() {
     }
   };
 
-  // Step 4: Generate Runway Video
+  // Step 4: Generate 3D View
+  const handleGenerate3D = async () => {
+    if (!designState.modelUrl) return;
+
+    setIsGenerating(true);
+    setCurrentOperation("Creating 3D visualization...");
+    
+    try {
+      const response = await fetch('http://localhost:3001/api/generate-3d', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          modelPhotoUrl: designState.modelUrl,
+          garmentType: designState.garmentType,
+          detailedFeatures: designState.detailedFeatures
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.success && data.imageUrl) {
+        setDesignState(prev => ({
+          ...prev,
+          threeDUrl: data.imageUrl,
+          currentStep: 'runway'
+        }));
+        toast({ title: "3D view created!", description: "Ready for runway video." });
+      } else {
+        throw new Error(data.error || 'Failed to generate 3D view');
+      }
+    } catch (error) {
+      handleApiError(error, "3D generation");
+    } finally {
+      setIsGenerating(false);
+      setCurrentOperation("");
+    }
+  };
+
+  // Step 5: Generate Runway Video
   const handleGenerateRunway = async () => {
     if (!designState.modelUrl) return;
 
@@ -257,6 +328,7 @@ export default function FashionDesignTool() {
           onGenerateSketch={handleGenerateSketch}
           onAddColors={handleAddColors}
           onGenerateModel={handleGenerateModel}
+          onGenerate3D={handleGenerate3D}
           onGenerateRunway={handleGenerateRunway}
           isGenerating={isGenerating}
         />
@@ -266,6 +338,7 @@ export default function FashionDesignTool() {
           designState={designState}
           isGenerating={isGenerating}
           currentOperation={currentOperation}
+          onRegenerateSketch={handleRegenerateSketch}
         />
       </div>
     </div>
