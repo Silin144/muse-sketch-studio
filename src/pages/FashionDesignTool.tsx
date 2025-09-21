@@ -194,15 +194,15 @@ export default function FashionDesignTool() {
     }
   };
 
-  // Step 4: Generate 3D View
-  const handleGenerate3D = async () => {
+  // Step 4: Generate Different Angle Views
+  const handleGenerateAngles = async () => {
     if (!designState.modelUrl) return;
 
     setIsGenerating(true);
-    setCurrentOperation("Creating 3D visualization...");
+    setCurrentOperation("Creating different angle views...");
     
     try {
-      const response = await fetch('http://localhost:3001/api/generate-3d', {
+      const response = await fetch('http://localhost:3001/api/generate-angles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -232,20 +232,20 @@ export default function FashionDesignTool() {
     }
   };
 
-  // Step 5: Generate Runway Video
+  // Step 5: Generate Ramp Walk Video
   const handleGenerateRunway = async () => {
     if (!designState.modelUrl) return;
 
     setIsGenerating(true);
-    setCurrentOperation("Creating runway video... (this may take a few minutes)");
+    setCurrentOperation("Creating ramp walk video... (this may take a few minutes)");
     
     try {
-      const response = await fetch('http://localhost:3001/api/generate-runway', {
+      const response = await fetch('http://localhost:3001/api/generate-ramp-walk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           modelPhotoUrl: designState.modelUrl,
-          walkStyle: "elegant runway walk"
+          walkStyle: "confident ramp walk"
         })
       });
 
@@ -328,7 +328,7 @@ export default function FashionDesignTool() {
           onGenerateSketch={handleGenerateSketch}
           onAddColors={handleAddColors}
           onGenerateModel={handleGenerateModel}
-          onGenerate3D={handleGenerate3D}
+          onGenerate3D={handleGenerateAngles}
           onGenerateRunway={handleGenerateRunway}
           isGenerating={isGenerating}
         />

@@ -321,7 +321,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (req.method === 'POST' && req.url === '/api/generate-3d') {
+  if (req.method === 'POST' && req.url === '/api/generate-angles') {
     let body = '';
     req.on('data', chunk => { body += chunk.toString(); });
     req.on('end', async () => {
@@ -335,75 +335,71 @@ const server = http.createServer(async (req, res) => {
           return;
         }
 
-        console.log('Generating 3D visualization with MVDream...');
+        console.log('Generating different angle views...');
 
-        // Create detailed description from features for 3D generation
+        // Create detailed description from features for different angle views
         const featureDescription = detailedFeatures ? 
           `${detailedFeatures.shoulders} shoulders, ${detailedFeatures.sleeves} sleeves, ${detailedFeatures.waist} waist, ${detailedFeatures.neckline} neckline, ${detailedFeatures.length} length, ${detailedFeatures.fit} fit` : '';
 
-        const fullPrompt = `Professional 3D fashion visualization showing multiple angles: front view, side view, back view of ${garmentType || 'garment'} ${featureDescription}, three-quarter turn sequence, 360-degree product photography style, clean white studio background, high-quality fashion photography, detailed fabric textures, professional lighting, fashion catalog style, no text or labels`;
+        const fullPrompt = `Professional fashion photography showing different angles: front view, side view, back view of ${garmentType || 'garment'} ${featureDescription}, three-quarter turn sequence, 360-degree product photography style, clean white studio background, high-quality fashion photography, detailed fabric textures, professional lighting, fashion catalog style, no text or labels`;
 
-        // MVDream expects different input format - using the model photo as reference
-        const input = {
-          prompt: fullPrompt,
-          image: modelPhotoUrl,
-          num_inference_steps: 50,
-          guidance_scale: 7.5
-        };
-
-        console.log('Using 3D visualization with prompt:', fullPrompt);
-        // Fallback to nano-banana with 3D-focused prompts since MVDream might not be available
+        console.log('Using different angle view generation with prompt:', fullPrompt);
+        // Use nano-banana for different angle visualization since it can handle image-to-image generation
         const input3D = {
           prompt: fullPrompt,
-          image_input: [modelPhotoUrl],
+          image_input: [modelPhotoUrl], // Use 'image_input' array format like other endpoints
           output_format: "jpg"
         };
+        console.log('Angle view API input:', JSON.stringify(input3D, null, 2));
         const output = await callReplicateAPI('google/nano-banana', input3D);
         
-        // MVDream returns multiple views - we'll use the first one or combine them
+        // Handle different angle view generation output
         let imageUrl;
         if (Array.isArray(output)) {
           // If multiple views returned, use the first one (or we could create a composite)
           imageUrl = output[0];
-          console.log(`3D generation returned ${output.length} views, using first view`);
+          console.log(`Angle view generation returned ${output.length} views, using first view`);
         } else {
           imageUrl = output;
         }
 
         if (!imageUrl) {
-          throw new Error('No image URL returned from MVDream 3D API');
+          throw new Error('No image URL returned from angle view API');
         }
 
-        console.log('3D view generated successfully with MVDream:', imageUrl);
+        console.log('Different angle view generated successfully:', imageUrl);
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
           imageUrl: imageUrl,
           allViews: Array.isArray(output) ? output : [output], // Include all views for future use
           success: true,
-          step: '3d',
-          model: 'mvdream'
+          step: 'angles',
+          model: 'nano-banana'
         }));
 
       } catch (error) {
-        console.error('Error generating 3D view:', error);
+        console.error('Error generating different angle views:', error);
+        console.error('Error stack:', error.stack);
+        console.error('Input data was:', JSON.stringify(data, null, 2));
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ 
-          error: `3D generation failed: ${error.message}`,
-          success: false 
+          error: `Different angle view generation failed: ${error.message}`,
+          success: false,
+          details: error.stack
         }));
       }
     });
     return;
   }
 
-  if (req.method === 'POST' && req.url === '/api/generate-runway') {
+  if (req.method === 'POST' && req.url === '/api/generate-ramp-walk') {
     let body = '';
     req.on('data', chunk => { body += chunk.toString(); });
     req.on('end', async () => {
       try {
         const data = JSON.parse(body);
-        const { modelPhotoUrl, walkStyle = "elegant runway walk" } = data;
+        const { modelPhotoUrl, walkStyle = "confident ramp walk" } = data;
 
         if (!modelPhotoUrl) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -415,43 +411,47 @@ const server = http.createServer(async (req, res) => {
           res.writeHead(500, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ 
             error: 'REPLICATE_API_TOKEN not configured',
-            success: false 
+            success: false
           }));
           return;
         }
 
-        console.log('Generating runway video with Veo-3...');
+        console.log('Generating ramp walk video with Kling-v2.1...');
 
-        const fullPrompt = `Professional fashion runway show, ${walkStyle}, model walking confidently down the runway, smooth fluid motion, elegant stride, high fashion presentation, professional lighting, fashion week atmosphere, cinematic quality, no text or watermarks, luxury fashion show environment, seamless loop motion`;
+        const fullPrompt = `Professional fashion model walking confidently down a runway ramp, ${walkStyle}, model starts at the back of the runway and walks forward towards camera, smooth fluid motion, elegant confident stride, cameras flashing from audience, professional runway lighting, fashion week atmosphere, full body shot throughout the walk, high fashion presentation, cinematic quality, luxury fashion show environment, seamless single take video`;
 
         const input = {
-          image: modelPhotoUrl,
-          prompt: fullPrompt
+          mode: "pro",
+          prompt: fullPrompt,
+          duration: 10,
+          start_image: modelPhotoUrl,
+          negative_prompt: "static image, multiple views, composite video, cuts, transitions, blurry, low quality"
         };
 
-        const output = await callReplicateAPI('google/veo-3', input, true); // true for video
+        console.log('Using Kling-v2.1 for ramp walk video generation');
+        const output = await callReplicateAPI('kwaivgi/kling-v2.1', input, true); // true for video
         
-        // Veo-3 returns video URL directly or in output array
+        // Kling-v2.1 returns video URL directly or in output array
         const videoUrl = Array.isArray(output) ? output[0] : output;
         
         if (!videoUrl) {
-          throw new Error('No video URL returned from Veo-3 API');
+          throw new Error('No video URL returned from Kling-v2.1 API');
         }
 
-        console.log('Runway video generated successfully:', videoUrl);
+        console.log('Ramp walk video generated successfully:', videoUrl);
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
           videoUrl: videoUrl,
           success: true,
-          step: 'runway'
+          step: 'ramp-walk'
         }));
 
       } catch (error) {
-        console.error('Error generating runway video:', error);
+        console.error('Error generating ramp walk video:', error);
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ 
-          error: `Runway video generation failed: ${error.message}`,
+          error: `Ramp walk video generation failed: ${error.message}`,
           success: false 
         }));
       }

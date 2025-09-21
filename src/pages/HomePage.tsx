@@ -110,15 +110,15 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-surface-primary">
+    <div className="min-h-screen bg-transparent">
       {/* Navigation Bar */}
-      <nav className="sticky top-0 z-50 bg-surface-primary/95 backdrop-blur-sm border-b border-border-subtle">
+      <nav className="absolute top-0 left-0 right-0 z-50 bg-transparent backdrop-blur-md border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <h1 className="font-dancing text-2xl font-bold text-text-primary">
+                <h1 className="font-dancing text-2xl font-bold text-white drop-shadow-lg">
                   🎨 Muse Sketch Studio
                 </h1>
               </div>
@@ -127,16 +127,16 @@ export default function HomePage() {
             {/* Desktop Navigation */}
             <div className="hidden md:block">
               <div className="ml-10 flex items-baseline space-x-8">
-                <a href="/home" className="text-text-primary font-medium">Home</a>
-                <a href="/design" className="text-text-secondary hover:text-text-primary transition-colors">Design</a>
-                <a href="/gallery" className="text-text-secondary hover:text-text-primary transition-colors">Gallery</a>
-                <a href="/about" className="text-text-secondary hover:text-text-primary transition-colors">About</a>
+                <a href="/home" className="text-white font-medium drop-shadow-md">Home</a>
+                <a href="/design" className="text-white/80 hover:text-white transition-colors drop-shadow-md">Design</a>
+                <a href="/gallery" className="text-white/80 hover:text-white transition-colors drop-shadow-md">Gallery</a>
+                <a href="/about" className="text-white/80 hover:text-white transition-colors drop-shadow-md">About</a>
               </div>
             </div>
 
             {/* CTA Button */}
             <div className="hidden md:block">
-              <Button asChild>
+              <Button asChild className="bg-white text-black hover:bg-white/90 shadow-lg">
                 <a href="/design">
                   Start Designing
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -150,6 +150,7 @@ export default function HomePage() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="text-white hover:bg-white/10"
               >
                 {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </Button>
@@ -159,13 +160,13 @@ export default function HomePage() {
           {/* Mobile Navigation */}
           {isMobileMenuOpen && (
             <div className="md:hidden">
-              <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-surface-secondary rounded-lg mt-2">
-                <a href="/home" className="text-text-primary block px-3 py-2 text-base font-medium">Home</a>
-                <a href="/design" className="text-text-secondary hover:text-text-primary block px-3 py-2 text-base font-medium">Design</a>
-                <a href="/gallery" className="text-text-secondary hover:text-text-primary block px-3 py-2 text-base font-medium">Gallery</a>
-                <a href="/about" className="text-text-secondary hover:text-text-primary block px-3 py-2 text-base font-medium">About</a>
+              <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-black/20 backdrop-blur-md rounded-lg mt-2 border border-white/10">
+                <a href="/home" className="text-white block px-3 py-2 text-base font-medium">Home</a>
+                <a href="/design" className="text-white/80 hover:text-white block px-3 py-2 text-base font-medium">Design</a>
+                <a href="/gallery" className="text-white/80 hover:text-white block px-3 py-2 text-base font-medium">Gallery</a>
+                <a href="/about" className="text-white/80 hover:text-white block px-3 py-2 text-base font-medium">About</a>
                 <div className="pt-2">
-                  <Button asChild className="w-full">
+                  <Button asChild className="w-full bg-white text-black hover:bg-white/90">
                     <a href="/design">
                       Start Designing
                       <ArrowRight className="ml-2 h-4 w-4" />
@@ -178,207 +179,82 @@ export default function HomePage() {
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-surface-primary via-surface-secondary to-surface-tertiary">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      {/* Hero Section with Background Video */}
+      <section className="relative h-screen flex items-center justify-center overflow-hidden">
+        {/* Background Video */}
+        <div className="absolute inset-0 w-full h-full">
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="w-full h-full object-cover"
+            style={{ filter: 'brightness(0.4)' }} // Darken video for better text contrast
+          >
+            <source src="/background video.mp4" type="video/mp4" />
+            {/* Fallback gradient if video fails to load */}
+          </video>
+          {/* Overlay gradient for better text readability */}
+          <div className="absolute inset-0 bg-gradient-to-br from-black/50 via-black/30 to-black/50"></div>
+        </div>
+
+        {/* Content layered on top of video */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="max-w-4xl mx-auto">
-            <h1 className="font-dancing text-6xl md:text-8xl lg:text-9xl font-bold text-text-primary mb-8 leading-tight tracking-tight">
+            <h1 className="font-dancing text-6xl md:text-8xl lg:text-9xl font-bold text-white mb-8 leading-tight tracking-tight drop-shadow-2xl">
               Transform Your Fashion Ideas Into Reality
             </h1>
-            <p className="text-2xl md:text-3xl lg:text-4xl text-text-secondary mb-10 font-roboto font-light tracking-wide">
+            <p className="text-2xl md:text-3xl lg:text-4xl text-white/90 mb-10 font-roboto font-light tracking-wide drop-shadow-lg">
               AI-Powered Design Pipeline
             </p>
-            <p className="text-xl md:text-2xl text-text-muted mb-16 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-xl md:text-2xl text-white/80 mb-16 max-w-3xl mx-auto leading-relaxed drop-shadow-md">
               Join 10,000+ designers creating amazing fashion with AI. From sketch to runway video in minutes.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-6 justify-center">
-              <Button size="lg" asChild className="text-xl px-10 py-8 font-semibold">
+            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+              <Button size="lg" asChild className="text-xl px-10 py-8 font-semibold bg-white text-black hover:bg-white/90 shadow-2xl">
                 <a href="/design">
                   <Sparkles className="mr-3 h-6 w-6" />
                   Start Designing
                 </a>
               </Button>
-              <Button variant="outline" size="lg" asChild className="text-xl px-10 py-8 font-semibold">
+              <Button variant="outline" size="lg" asChild className="text-xl px-10 py-8 font-semibold border-white text-white bg-black/20 hover:bg-white/10 hover:border-white shadow-xl backdrop-blur-sm">
                 <a href="/gallery">
                   <Eye className="mr-3 h-6 w-6" />
                   View Gallery
                 </a>
               </Button>
-              <Button variant="ghost" size="lg" asChild className="text-xl px-10 py-8 font-semibold">
-                <a href="/about">
-                  Learn More
-                </a>
-              </Button>
             </div>
           </div>
         </div>
+
+        {/* Fallback background if video doesn't load */}
+        <div className="absolute inset-0 bg-gradient-to-br from-surface-primary via-surface-secondary to-surface-tertiary -z-10"></div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-32 bg-surface-primary">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-20">
-            <h2 className="font-dancing text-5xl md:text-6xl lg:text-7xl font-bold text-text-primary mb-6 leading-tight tracking-tight">
-              Powerful Features
-            </h2>
-            <p className="text-2xl md:text-3xl text-text-secondary max-w-3xl mx-auto leading-relaxed font-light">
-              Everything you need to create professional fashion designs with AI
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-            {features.map((feature, index) => {
-              const Icon = feature.icon;
-              return (
-                <div
-                  key={index}
-                  className={cn(
-                    "group p-8 rounded-2xl bg-surface-secondary border border-border-subtle hover:border-border-default transition-all duration-300 hover:shadow-default cursor-pointer",
-                    feature.link && "hover:scale-105"
-                  )}
-                  onClick={() => feature.link && (window.location.href = feature.link)}
-                >
-                  <div className="flex items-center mb-6">
-                    <div className={cn(
-                      "p-4 rounded-xl mr-6",
-                      feature.color === 'blue' && "bg-blue-100 text-blue-600",
-                      feature.color === 'green' && "bg-green-100 text-green-600",
-                      feature.color === 'purple' && "bg-purple-100 text-purple-600",
-                      feature.color === 'red' && "bg-red-100 text-red-600",
-                      feature.color === 'orange' && "bg-orange-100 text-orange-600",
-                      feature.color === 'pink' && "bg-pink-100 text-pink-600"
-                    )}>
-                      <Icon className="h-6 w-6" />
-                    </div>
-                    <h3 className="text-2xl font-semibold text-text-primary">
-                      {feature.title}
-                    </h3>
-                  </div>
-                  <p className="text-lg text-text-secondary leading-relaxed">
-                    {feature.description}
-                  </p>
-                  {feature.link && (
-                    <div className="mt-6 flex items-center text-text-primary font-medium group-hover:text-primary transition-colors">
-                      Get Started
-                      <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Gallery Preview */}
-      <section className="py-32 bg-surface-secondary">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-20">
-            <h2 className="font-dancing text-5xl md:text-6xl lg:text-7xl font-bold text-text-primary mb-6 leading-tight tracking-tight">
-              Recent Designs
-            </h2>
-            <p className="text-2xl md:text-3xl text-text-secondary max-w-3xl mx-auto leading-relaxed font-light">
-              See what our community is creating with AI-powered fashion design
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 mb-16">
-            {mockDesigns.map((design) => (
-              <div
-                key={design.id}
-                className="group bg-surface-primary rounded-xl overflow-hidden border border-border-subtle hover:border-border-default transition-all duration-300 hover:shadow-default hover:scale-105 cursor-pointer"
-              >
-                <div className="aspect-[3/4] overflow-hidden">
-                  <img
-                    src={design.thumbnail}
-                    alt={design.title}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                  />
-                </div>
-                <div className="p-4">
-                  <h3 className="font-semibold text-text-primary mb-1 truncate">
-                    {design.title}
-                  </h3>
-                  <p className="text-sm text-text-secondary mb-2">
-                    by {design.designer}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center text-text-muted">
-                      <Heart className="h-4 w-4 mr-1" />
-                      <span className="text-sm">{design.likes}</span>
-                    </div>
-                    <Badge variant="secondary" className="text-xs">
-                      New
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="text-center">
-            <Button size="lg" asChild className="text-xl px-10 py-8 font-semibold">
-              <a href="/gallery">
-                View All Designs
-                <ArrowRight className="ml-3 h-6 w-6" />
-              </a>
-            </Button>
-          </div>
-        </div>
-      </section>
 
       {/* Footer */}
-      <footer className="bg-surface-tertiary border-t border-border-subtle">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="col-span-1 md:col-span-2">
-              <h3 className="font-dancing text-2xl font-bold text-text-primary mb-4">
-                🎨 Muse Sketch Studio
-              </h3>
-              <p className="text-text-secondary mb-4 max-w-md">
-                Transform your fashion ideas into reality with our AI-powered design pipeline. 
-                From sketch to runway video in minutes.
-              </p>
-              <div className="flex space-x-4">
-                <a href="#" className="text-text-muted hover:text-text-primary transition-colors">
-                  Twitter
-                </a>
-                <a href="#" className="text-text-muted hover:text-text-primary transition-colors">
-                  Instagram
-                </a>
-                <a href="#" className="text-text-muted hover:text-text-primary transition-colors">
-                  LinkedIn
-                </a>
-              </div>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold text-text-primary mb-4">Quick Links</h4>
-              <ul className="space-y-2">
-                <li><a href="/home" className="text-text-secondary hover:text-text-primary transition-colors">Home</a></li>
-                <li><a href="/design" className="text-text-secondary hover:text-text-primary transition-colors">Design</a></li>
-                <li><a href="/gallery" className="text-text-secondary hover:text-text-primary transition-colors">Gallery</a></li>
-                <li><a href="/about" className="text-text-secondary hover:text-text-primary transition-colors">About</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold text-text-primary mb-4">Support</h4>
-              <ul className="space-y-2">
-                <li><a href="#" className="text-text-secondary hover:text-text-primary transition-colors">Help Center</a></li>
-                <li><a href="#" className="text-text-secondary hover:text-text-primary transition-colors">Tutorials</a></li>
-                <li><a href="#" className="text-text-secondary hover:text-text-primary transition-colors">Contact</a></li>
-                <li><a href="#" className="text-text-secondary hover:text-text-primary transition-colors">Privacy</a></li>
-              </ul>
-            </div>
-          </div>
-          
-          <div className="border-t border-border-subtle mt-8 pt-8 text-center">
-            <p className="text-text-muted">
-              © 2024 Muse Sketch Studio. All rights reserved.
-            </p>
-          </div>
+      <footer className="absolute bottom-0 left-0 right-0 z-40 bg-black/20 backdrop-blur-md py-4 border-t border-white/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <p className="text-white/90 text-sm">
+            Made with ❤️ by{' '}
+            <a href="https://silin.ca" target="_blank" rel="noopener noreferrer" className="text-white hover:underline font-medium">
+              Silin
+            </a>
+            ,{' '}
+            <a href="https://sethisarthak.com" target="_blank" rel="noopener noreferrer" className="text-white hover:underline font-medium">
+              Sarthak
+            </a>
+            ,{' '}
+            <a href="https://github.com/shauraya-mohan" target="_blank" rel="noopener noreferrer" className="text-white hover:underline font-medium">
+              Shauraya
+            </a>
+            {' '}and{' '}
+            <a href="https://github.com/meharpruthi" target="_blank" rel="noopener noreferrer" className="text-white hover:underline font-medium">
+              Mehar
+            </a>
+            .
+          </p>
         </div>
       </footer>
     </div>

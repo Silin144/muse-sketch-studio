@@ -95,8 +95,8 @@ const steps = [
   { id: 'sketch', label: 'Fashion Sketch', icon: Sparkles, description: 'AI-generated sketch' },
   { id: 'colors', label: 'Add Colors', icon: Palette, description: 'Choose color palette' },
   { id: 'model', label: 'Model Photo', icon: User, description: 'See it on a model' },
-  { id: '3d', label: '3D View', icon: Box, description: '3D model visualization' },
-  { id: 'runway', label: 'Runway Video', icon: Video, description: 'Fashion show ready' }
+  { id: '3d', label: 'Different Angles', icon: Box, description: 'View from different angles' },
+  { id: 'runway', label: 'Ramp Walk Video', icon: Video, description: 'Fashion ramp walk ready' }
 ];
 
 export function FashionPipeline({ 
@@ -426,12 +426,12 @@ export function FashionPipeline({
             </div>
           )}
 
-          {/* Step 4: 3D View */}
+          {/* Step 4: Different Angle Views */}
           {designState.currentStep === '3d' && (
             <div className="space-y-4">
-              <h3 className="text-sm font-medium text-text-primary">Step 4: Generate 3D View</h3>
+              <h3 className="text-sm font-medium text-text-primary">Step 4: View from Different Angles</h3>
               <p className="text-sm text-text-secondary">
-                Create a 3D visualization of your design for better perspective and detail viewing.
+                Generate views of your design from different angles for better perspective and detail viewing.
               </p>
 
               <Button 
@@ -440,17 +440,17 @@ export function FashionPipeline({
                 className="w-full"
               >
                 <Box className="h-4 w-4 mr-2" />
-                Generate 3D View
+                View Different Angles
               </Button>
             </div>
           )}
 
-          {/* Step 5: Runway Video */}
+          {/* Step 5: Ramp Walk Video */}
           {designState.currentStep === 'runway' && (
             <div className="space-y-4">
-              <h3 className="text-sm font-medium text-text-primary">Step 5: Create Runway Video</h3>
+              <h3 className="text-sm font-medium text-text-primary">Step 5: Create Ramp Walk Video</h3>
               <p className="text-sm text-text-secondary">
-                Generate a runway walk video with your model wearing the design.
+                Generate a professional ramp walk video with cameras flashing, showing the outfit from different angles.
               </p>
 
               <Button 
@@ -459,7 +459,7 @@ export function FashionPipeline({
                 className="w-full"
               >
                 <Video className="h-4 w-4 mr-2" />
-                Create Runway Video
+                Create Ramp Walk Video
               </Button>
             </div>
           )}
