@@ -3,6 +3,9 @@ import { FashionPipeline } from "@/components/FashionPipeline";
 import { FashionCanvas } from "@/components/FashionCanvas";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Home } from "lucide-react";
 
 type DesignStep = 'prompt' | 'sketch' | 'colors' | 'model' | 'runway';
 
@@ -33,6 +36,7 @@ export default function FashionDesignTool() {
   const [currentOperation, setCurrentOperation] = useState<string>("");
   const isMobile = useIsMobile();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Auto-collapse sidebar on mobile
   const shouldCollapseSidebar = isMobile || isSidebarCollapsed;
@@ -223,6 +227,24 @@ export default function FashionDesignTool() {
 
   return (
     <div className="h-screen bg-surface-primary flex flex-col font-roboto">
+      {/* Top Navigation */}
+      <div className="flex items-center justify-between p-4 border-b border-border-subtle bg-surface-secondary">
+        <div className="flex items-center space-x-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/")}
+            className="text-text-secondary hover:text-text-primary"
+          >
+            <Home className="h-4 w-4 mr-2" />
+            Home
+          </Button>
+        </div>
+        <h1 className="font-dancing text-2xl font-semibold text-text-primary">
+          Muse Sketch Studio
+        </h1>
+        <div className="w-20"></div> {/* Spacer for centering */}
+      </div>
       
       {/* Main Content */}
       <div className="flex-1 flex">
