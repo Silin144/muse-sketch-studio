@@ -11,6 +11,7 @@ type DesignStep = 'prompt' | 'sketch' | 'colors' | 'model' | '3d' | 'runway';
 
 interface DesignState {
   prompt: string;
+  category: string;
   garmentType: string;
   gender: string;
   detailedFeatures: {
@@ -20,29 +21,53 @@ interface DesignState {
     neckline: string;
     length: string;
     fit: string;
+    fabric: string;
+    pattern: string;
+    embellishments: string;
+    closure: string;
+    collar: string;
+    hemStyle: string;
+    pockets: string;
+    backDetail: string;
   };
   sketchUrl: string | null;
   coloredUrl: string | null;
   modelUrl: string | null;
   threeDUrl: string | null;
+  angleViews?: Array<{ angle: string; imageUrl: string }>; // 6 different angle photos
   runwayUrl: string | null;
   selectedColors: string[];
   currentStep: DesignStep;
+  previousSketchUrl: string | null; // For edit history
+  previousColoredUrl: string | null; // For edit history
+  uploadedImageUrl: string | null; // User uploaded image
+  uploadedLogoUrl: string | null; // User uploaded logo
+  useUploadedImage: boolean; // Flag to use uploaded image instead of generation
+  designHistory: string[]; // Track all design changes like a conversation
 }
 
 export default function FashionDesignTool() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [designState, setDesignState] = useState<DesignState>({
     prompt: "",
-    garmentType: "dress",
-    gender: "Women",
+    category: "",
+    garmentType: "",
+    gender: "",
     detailedFeatures: {
-      shoulders: "Regular",
-      sleeves: "Long",
-      waist: "Regular",
-      neckline: "Round",
-      length: "Knee-length",
-      fit: "Regular"
+      shoulders: "",
+      sleeves: "",
+      waist: "",
+      neckline: "",
+      length: "",
+      fit: "",
+      fabric: "",
+      pattern: "",
+      embellishments: "",
+      closure: "",
+      collar: "",
+      hemStyle: "",
+      pockets: "",
+      backDetail: ""
     },
     sketchUrl: null,
     coloredUrl: null,
@@ -50,7 +75,13 @@ export default function FashionDesignTool() {
     threeDUrl: null,
     runwayUrl: null,
     selectedColors: [],
-    currentStep: 'prompt'
+    currentStep: 'prompt',
+    previousSketchUrl: null,
+    previousColoredUrl: null,
+    uploadedImageUrl: null,
+    uploadedLogoUrl: null,
+    useUploadedImage: false,
+    designHistory: []
   });
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentOperation, setCurrentOperation] = useState<string>("");
@@ -63,12 +94,32 @@ export default function FashionDesignTool() {
 
   // Regenerate sketch with new prompt
   const handleRegenerateSketch = async (newPrompt: string) => {
-    setDesignState(prev => ({ ...prev, prompt: newPrompt }));
-    await generateSketch(newPrompt);
+    // When editing, keep the original prompt but add the edit instruction
+    // We're in edit mode if there's a CURRENT sketch (not just a previous one)
+    const isEditMode = !!designState.sketchUrl;
+    
+    if (isEditMode) {
+      // In edit mode: add this edit to the design history
+      setDesignState(prev => ({ 
+        ...prev, 
+        designHistory: [...prev.designHistory, newPrompt] 
+      }));
+      // Send the edit instruction separately
+      // The previousSketchUrl will be set automatically in generateSketch
+      await generateSketch(newPrompt, true);
+    } else {
+      // New design: update the main prompt and initialize history
+      setDesignState(prev => ({ 
+        ...prev, 
+        prompt: newPrompt,
+        designHistory: [newPrompt] // Start fresh history with the initial design
+      }));
+      await generateSketch(newPrompt, false);
+    }
   };
 
   // Generate sketch function (extracted for reuse)
-  const generateSketch = async (prompt: string) => {
+  const generateSketch = async (prompt: string, isEditInstruction: boolean = false) => {
     if (!prompt.trim()) {
       toast({
         title: "No prompt provided",
@@ -79,29 +130,50 @@ export default function FashionDesignTool() {
     }
 
     setIsGenerating(true);
-    setCurrentOperation("Generating fashion sketch...");
+    setCurrentOperation(designState.previousSketchUrl ? "Refining sketch based on previous version..." : "Generating fashion sketch...");
+    
+    // DEBUG: Log logo status before sending
+    console.log('🔍 FRONTEND DEBUG: Logo URL present?', !!designState.uploadedLogoUrl);
+    if (designState.uploadedLogoUrl) {
+      console.log('   Logo length:', designState.uploadedLogoUrl.length, 'chars');
+    }
     
     try {
       const response = await fetch('http://localhost:3001/api/generate-sketch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          prompt: prompt,
+          prompt: isEditInstruction ? designState.prompt : prompt, // Original design description
+          editInstruction: isEditInstruction ? prompt : undefined, // Separate edit instruction
           garmentType: designState.garmentType,
           gender: designState.gender,
-          detailedFeatures: designState.detailedFeatures
+          detailedFeatures: designState.detailedFeatures,
+          previousSketchUrl: designState.previousSketchUrl, // Pass previous for refinement
+          uploadedImageUrl: designState.uploadedImageUrl, // User uploaded image
+          uploadedLogoUrl: designState.uploadedLogoUrl, // User uploaded logo
+          useUploadedImage: designState.useUploadedImage, // Flag to use uploaded image
+          designHistory: designState.designHistory // Pass full conversation history
         })
       });
 
       const data = await response.json();
       
       if (data.success && data.imageUrl) {
-        setDesignState(prev => ({
-          ...prev,
-          sketchUrl: data.imageUrl,
-          currentStep: 'colors'
-        }));
-        toast({ title: "Sketch generated!", description: "Ready for coloring." });
+        setDesignState(prev => {
+          const newState = {
+            ...prev,
+            previousSketchUrl: prev.sketchUrl, // Save current as previous before updating
+            sketchUrl: data.imageUrl,
+            currentStep: 'colors'
+          };
+          // DEBUG: Verify logo is preserved in state
+          console.log('✅ State updated - Logo still present?', !!newState.uploadedLogoUrl);
+          return newState;
+        });
+        toast({ 
+          title: designState.previousSketchUrl ? "Sketch refined!" : "Sketch generated!", 
+          description: "Ready for coloring." 
+        });
       } else {
         throw new Error(data.error || 'Failed to generate sketch');
       }
@@ -115,6 +187,13 @@ export default function FashionDesignTool() {
 
   // Step 1: Generate Sketch (wrapper)
   const handleGenerateSketch = async () => {
+    // Initialize design history with the first prompt if it's empty
+    if (designState.designHistory.length === 0) {
+      setDesignState(prev => ({ 
+        ...prev, 
+        designHistory: [designState.prompt] 
+      }));
+    }
     await generateSketch(designState.prompt);
   };
 
@@ -123,7 +202,7 @@ export default function FashionDesignTool() {
     if (!designState.sketchUrl) return;
 
     setIsGenerating(true);
-    setCurrentOperation("Adding colors to design...");
+    setCurrentOperation(designState.previousColoredUrl ? "Refining colors based on previous version..." : "Adding colors to design...");
     
     try {
       const response = await fetch('http://localhost:3001/api/add-colors', {
@@ -132,7 +211,8 @@ export default function FashionDesignTool() {
         body: JSON.stringify({ 
           sketchUrl: designState.sketchUrl,
           colors: designState.selectedColors,
-          prompt: designState.prompt
+          prompt: designState.prompt,
+          previousColoredUrl: designState.previousColoredUrl // Pass previous for refinement
         })
       });
 
@@ -141,10 +221,14 @@ export default function FashionDesignTool() {
       if (data.success && data.imageUrl) {
         setDesignState(prev => ({
           ...prev,
+          previousColoredUrl: prev.coloredUrl, // Save current as previous before updating
           coloredUrl: data.imageUrl,
           currentStep: 'model'
         }));
-        toast({ title: "Colors added!", description: "Ready for model generation." });
+        toast({ 
+          title: designState.previousColoredUrl ? "Colors refined!" : "Colors added!", 
+          description: "Ready for model generation." 
+        });
       } else {
         throw new Error(data.error || 'Failed to add colors');
       }
@@ -154,6 +238,12 @@ export default function FashionDesignTool() {
       setIsGenerating(false);
       setCurrentOperation("");
     }
+  };
+
+  // Edit/Regenerate Colors
+  const handleEditColors = async () => {
+    // Simply rerun the color addition with current selections
+    await handleAddColors();
   };
 
   // Step 3: Generate Model Photo
@@ -199,7 +289,7 @@ export default function FashionDesignTool() {
     if (!designState.modelUrl) return;
 
     setIsGenerating(true);
-    setCurrentOperation("Creating different angle views...");
+    setCurrentOperation("Generating 6 different angle views... This will take a few minutes.");
     
     try {
       const response = await fetch('http://localhost:3001/api/generate-angles', {
@@ -214,18 +304,23 @@ export default function FashionDesignTool() {
 
       const data = await response.json();
       
-      if (data.success && data.imageUrl) {
+      if (data.success && data.allViews && data.allViews.length > 0) {
         setDesignState(prev => ({
           ...prev,
-          threeDUrl: data.imageUrl,
+          threeDUrl: data.imageUrl, // Main image
+          // Store all angle views for display
+          angleViews: data.allViews,
           currentStep: 'runway'
         }));
-        toast({ title: "3D view created!", description: "Ready for runway video." });
+        toast({ 
+          title: `${data.viewCount} angle views created!`, 
+          description: "Ready for runway video." 
+        });
       } else {
-        throw new Error(data.error || 'Failed to generate 3D view');
+        throw new Error(data.error || 'Failed to generate angle views');
       }
     } catch (error) {
-      handleApiError(error, "3D generation");
+      handleApiError(error, "angle view generation");
     } finally {
       setIsGenerating(false);
       setCurrentOperation("");
@@ -330,6 +425,7 @@ export default function FashionDesignTool() {
           onGenerateModel={handleGenerateModel}
           onGenerate3D={handleGenerateAngles}
           onGenerateRunway={handleGenerateRunway}
+          onEditColors={handleEditColors}
           isGenerating={isGenerating}
         />
         

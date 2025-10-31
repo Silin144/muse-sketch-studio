@@ -22,6 +22,7 @@ interface DesignState {
   coloredUrl: string | null;
   modelUrl: string | null;
   threeDUrl: string | null;
+  angleViews?: Array<{ angle: string; imageUrl: string }>; // 6 different angle photos
   runwayUrl: string | null;
   selectedColors: string[];
   currentStep: DesignStep;
@@ -112,7 +113,54 @@ export function FashionCanvas({ designState, isGenerating, currentOperation, cla
       );
     }
 
-    // Show 3D view if available
+    // Show all 6 angle views if available
+    if (designState.threeDUrl && designState.angleViews) {
+      return (
+        <div className="h-full flex flex-col">
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="grid grid-cols-3 gap-4">
+              {designState.angleViews.map((view, index) => (
+                <div key={index} className="relative group">
+                  <img 
+                    src={view.imageUrl} 
+                    alt={`${view.angle} view`}
+                    className="w-full h-auto object-cover rounded-lg shadow-lg hover:shadow-xl transition-shadow"
+                  />
+                  <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                    {view.angle.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="p-4 border-t border-border-subtle bg-surface-secondary">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-dancing text-lg font-semibold text-text-primary">
+                  6 Angle Views Ready! 📐
+                </h3>
+                <p className="text-sm text-text-secondary">
+                  Click "Create Ramp Walk Video" to continue
+                </p>
+              </div>
+              <Button
+                onClick={() => {
+                  // Download all 6 views as a zip or first view
+                  downloadImage(designState.angleViews![0].imageUrl, 'angle-views.png');
+                }}
+                size="sm"
+                variant="outline"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download
+              </Button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Fallback: Show single 3D view if angleViews not available yet
     if (designState.threeDUrl) {
       return (
         <div className="h-full flex flex-col">
@@ -127,14 +175,14 @@ export function FashionCanvas({ designState, isGenerating, currentOperation, cla
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-dancing text-lg font-semibold text-text-primary">
-                  3D View Ready! 📐
+                  Angle View Ready! 📐
                 </h3>
                 <p className="text-sm text-text-secondary">
-                  Click "Create Runway Video" to continue
+                  Click "Create Ramp Walk Video" to continue
                 </p>
               </div>
               <Button
-                onClick={() => downloadImage(designState.threeDUrl!, '3d-view.png')}
+                onClick={() => downloadImage(designState.threeDUrl!, 'angle-view.png')}
                 size="sm"
                 variant="outline"
               >
